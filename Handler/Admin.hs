@@ -168,6 +168,7 @@ matchProcess (Match win lose)= runDB $ do
           case change of
             True -> do
               updateWhere [PlayerRanking >=. lowest, PlayerRanking <. highest] [PlayerRanking +=. 1]
+              insert $ Match k1 k2
               update k1 [PlayerRanking =. lowest]
               return $ Right (Match win lose)
             _ -> return $ Right (Match win lose)
