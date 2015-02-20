@@ -1,5 +1,6 @@
-<form method=post action=@{AdminR}#form enctype=#{enctype}>
-  ^{addMatchWidget}
-  <button .btn .btn-default type="submit">
-    Submit Match
+<div class="row col-xs-12">
+  <form method=post action=@{AdminR}#form enctype=#{enctype}>
+    ^{addMatchWidget}
+    <button .btn .btn-default type="submit">
+      Submit Match
 

@@ -1,5 +1,0 @@
-^{topBar}
-<form method=post action=@{AddUserR}#form enctype=#{enctype}>
-  ^{widget}
-   <button .btn .btn-default type="submit">
-      Send it!

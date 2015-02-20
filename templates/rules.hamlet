@@ -1,4 +1,4 @@
-<div class=row>
+<div class="row col-xs-12">
   <h1>Rules
   <p>A basic explanation of ladder style tournaments may be found at #
      <a href=http://en.wikipedia.org/wiki/Ladder_tournament>wikipedia</a>.

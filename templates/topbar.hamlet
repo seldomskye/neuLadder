@@ -1,4 +1,4 @@
-<div id="topbar" class="row">
+<div id="topbar" class="row col-xs-12">
   <ul class="list-inline nav nav-pills nav-justified">
     <li><a href=@{LadderR}>Ladder</a>
     <li><a href=@{RulesR}>Rules</a>

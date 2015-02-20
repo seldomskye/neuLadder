@@ -1,5 +1,6 @@
-<form method=post action=@{AdminR}#form enctype=#{enctype}>
-  ^{addPlayerWidget}
-  <button .btn .btn-default type="submit">
-    Add player
+<div class="row col-xs-12">
+  <form method=post action=@{AdminR}#form enctype=#{enctype}>
+    ^{addPlayerWidget}
+    <button .btn .btn-default type="submit">
+      Add player
 
