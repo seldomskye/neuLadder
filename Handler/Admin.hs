@@ -1,10 +1,7 @@
 module Handler.Admin where
 
 import Import
-import Control.Exception (catch)
-import Data.Maybe
 import Yesod.Form.Bootstrap3
-import Data.Time.Clock (getCurrentTime)
 
 getAdminR :: Handler Html
 getAdminR = do 
@@ -20,7 +17,7 @@ getAdminR = do
  
 playerForm = identifyForm "addPlayer"$ renderBootstrap3 BootstrapBasicForm addForm
 matchForm =  identifyForm "addMatch" $ renderBootstrap3 BootstrapBasicForm matchAddForm
-rPlayerForm =  identifyForm "removePlayer" $ renderBootstrap3 BootstrapBasicForm removeplayerForm
+rPlayerForm =  identifyForm "removePlayer" $ renderBootstrap3 BootstrapBasicForm removePlayerForm
 
 
 postAdminR :: Handler Html
@@ -36,12 +33,12 @@ postAdminR = do
         $(widgetFile "removePlayer")
   case resultPlayer of
     FormSuccess player -> do
-      id <- processPlayer player
-      case id of
-            Right idz -> defaultLayout $ do
+      playerId <- processPlayer player 
+      case playerId of
+            Right _ -> defaultLayout $ do
               adminWid
               [whamlet|<p>#{show player}|]
-            Left play -> defaultLayout $ do
+            Left _ -> defaultLayout $ do
               adminWid
               [whamlet|<p>Player already present|]
     _ -> case resultMatch of
@@ -100,18 +97,14 @@ data Character =
 charactersEnum :: [(Text, Character)]
 charactersEnum = map (pack . show &&& id) [minBound..maxBound]
 
-getLastPlayer = runDB $ do
-  x <- count [PlayerRanking >. 0]
-  return x
-
 processPlayer :: PlayerF -> Handler (Either Player PlayerId)
 processPlayer player = runDB $ do
   x <- count [PlayerRanking >. 0]
   time <- liftIO getCurrentTime
-  play <- insertBy $ playerFtoPlayer player (x + 1) time
-  case play of
+  maybePlayerId <- insertBy $ playerFtoPlayer player (x + 1) time
+  case maybePlayerId of
     Left (Entity _ play) -> return $ Left play
-    Right id -> return $ Right id
+    Right playerId -> return $ Right playerId
 
 
 data PlayerF = PlayerF
@@ -151,7 +144,7 @@ matchAddForm = Match
                <*> areq textField (bfs ("Loser" :: Text)) Nothing
 
 matchProcess :: Match -> Handler (Either String Match)
-matchProcess (Match win lose)= runDB $ do
+matchProcess match@(Match win lose)= runDB $ do
   winner <- getBy (UniqueTag win)
   loser <- getBy (UniqueTag lose)
   case (winner, loser) of
@@ -160,7 +153,7 @@ matchProcess (Match win lose)= runDB $ do
         do
           let
             (Entity k1 p1) = winn
-            (Entity k2 p2) = loss
+            (Entity _ p2) = loss
             r1 = playerRanking p1
             r2 = playerRanking p2
             [lowest, highest] = sort [r1, r2]
@@ -168,7 +161,7 @@ matchProcess (Match win lose)= runDB $ do
           case change of
             True -> do
               updateWhere [PlayerRanking >=. lowest, PlayerRanking <. highest] [PlayerRanking +=. 1]
-              insert $ Match k1 k2
+              _ <- insert $ match
               update k1 [PlayerRanking =. lowest]
               return $ Right (Match win lose)
             _ -> return $ Right (Match win lose)
@@ -180,7 +173,8 @@ validateMatch :: Entity Player -> Entity Player -> Bool
 --validateMatch (Entity _ (Player _ r1 _)) (Entity _ (Player _ r2 _)) = (<3) . abs $ r2 - r1 
 validateMatch _ _ = True
 --------------------------------------------------------------------------------
-removeplayerForm = areq textField (bfs("Player Tag" :: Text))Nothing
+removePlayerForm :: AForm Handler Text
+removePlayerForm = areq textField (bfs("Player Tag" :: Text))Nothing
 
 playerRProcess :: Text -> Handler (Either Text Text)
 playerRProcess tag = runDB $ do  
