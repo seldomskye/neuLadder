@@ -1,0 +1,10 @@
+/static StaticR Static appStatic
+/auth   AuthR   Auth   getAuth
+
+/favicon.ico FaviconR GET
+/robots.txt RobotsR GET
+
+/ HomeR GET
+/ladder LadderR GET
+/rules RulesR GET
+/admin AdminR GET POST !admin

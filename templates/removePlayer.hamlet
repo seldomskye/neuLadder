@@ -1,0 +1,5 @@
+  <form method=post action=@{AdminR}#form enctype=#{enctype}>
+    <div class="form-group">
+      ^{removePlayerWidget}
+      <button .btn .btn-default type="submit">
+        Remove player

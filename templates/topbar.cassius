@@ -1,0 +1,16 @@
+#topbar a:link, a:visited
+    display: block
+    font-weight: bold
+    color: #FFFFFF
+    background-color: #880000;
+    text-align: center
+    padding: 4px
+    text-decoration: none
+    text-transform: uppercase
+
+#topbar a:hover, a:active 
+    background-color: #ff0000;
+
+
+  
+     

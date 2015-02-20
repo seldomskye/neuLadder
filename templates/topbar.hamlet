@@ -1,0 +1,6 @@
+<div id="topbar" class="row">
+  <ul class="list-inline nav nav-pills nav-justified">
+    <li><a href=@{LadderR}>Ladder</a>
+    <li><a href=@{RulesR}>Rules</a>
+    <li><a href=@{AdminR}>Admin</a>
+<p>

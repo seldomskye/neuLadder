@@ -1,0 +1,6 @@
+table.rules td
+  padding: 15px 30px
+  border: 1px solid black
+
+.rules table
+  align: center

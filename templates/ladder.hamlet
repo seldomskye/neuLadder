@@ -1,0 +1,22 @@
+^{topBar}
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Ranking
+        <th>Player Tag
+        <th>Name
+        <th class="hidden-xs">Characters
+    <tbody>
+      $forall Player tag ranking characters name _ _<- players
+        <tr id=#{ranking}>
+          <td>#{ranking}
+          <td>#{tag}
+          <td>#{name}
+          <td class="hidden-xs">
+            $forall char <- characters
+              <img src=/static/meleeChars/#{toLower char}.png alt=#{char}>
+
+<nav class="navbar navbar-default navbar-fixed-bottom" role="navigation">
+  <div class="form-group">
+    <label class="control-label">Jump To Rank:
+    <input type="text"    id="ladder-jump" class="form-control" placeholder="1">
