@@ -8,3 +8,4 @@
 /ladder LadderR GET
 /rules RulesR GET
 /admin AdminR GET POST !admin
+/recentMatches RecentMatchesR GET

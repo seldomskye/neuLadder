@@ -23,6 +23,7 @@ library
                      Handler.Common
                      Handler.Admin
                      Handler.Ladder
+                     Handler.RecentMatches
                      AuthVerification
 
     if flag(dev) || flag(library-only)
