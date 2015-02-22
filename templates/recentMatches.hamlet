@@ -1,0 +1,13 @@
+<div class="row col-xs-12">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Winner
+        <th>Loser
+        <th>Date
+    <tbody>
+      $forall Match winner loser time <- matches
+        <tr>
+          <td>#{winner}
+          <td>#{loser}
+          <td>#{renderTimeEtc time}

@@ -152,20 +152,19 @@ matchProcess match@(Match win lose date)= runDB $ do
     (Just winn, Just loss) -> case (validateMatch winn loss ) of
       True ->
         do
-          let
-            (Entity k1 p1) = winn
-            (Entity _ p2) = loss
-            r1 = playerRanking p1
-            r2 = playerRanking p2
-            [lowest, highest] = sort [r1, r2]
-            change = r1 > r2
-          case change of
+          _ <- insert $ match
+          case r1 > r2 of
             True -> do
               updateWhere [PlayerRanking >=. lowest, PlayerRanking <. highest] [PlayerRanking +=. 1]
-              _ <- insert $ match
               update k1 [PlayerRanking =. lowest]
               return $ Right (Match win lose date)
             _ -> return $ Right (Match win lose date)
+            where
+              (Entity k1 p1) = winn
+              (Entity _ p2) = loss
+              r1 = playerRanking p1
+              r2 = playerRanking p2
+              [lowest, highest] = sort [r1, r2]
       False -> return $ Left "Invalid match, players too far apart"
     _ -> return $ Left "Failure"
 
