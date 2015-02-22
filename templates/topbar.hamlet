@@ -3,4 +3,5 @@
     <li><a href=@{LadderR}>Ladder</a>
     <li><a href=@{RulesR}>Rules</a>
     <li><a href=@{AdminR}>Admin</a>
+    <li><a href=@{RecentMatchesR}>Recent Matches</a>
 <p>

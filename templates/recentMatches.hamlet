@@ -6,8 +6,8 @@
         <th>Loser
         <th>Date
     <tbody>
-      $forall Match winner loser date <- matches
+      $forall Match winner loser time <- matches
         <tr>
           <td>#{winner}
           <td>#{loser}
-          <td>#{show date}
+          <td>#{renderTimeEtc time}
