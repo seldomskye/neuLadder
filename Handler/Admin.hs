@@ -45,7 +45,7 @@ postAdminR = do
       FormSuccess match -> do
         rez <- matchProcess match
         case rez of
-          Right (Match win lose) -> defaultLayout $ do
+          Right (Match win lose _) -> defaultLayout $ do
             adminWid
             [whamlet|<p>Congrats to #{show win}!
              <p>G-fucking-g #{show lose}|]
@@ -142,9 +142,10 @@ matchAddForm :: AForm Handler Match
 matchAddForm = Match
                <$> areq textField (bfs ("Winner" :: Text)) Nothing
                <*> areq textField (bfs ("Loser" :: Text)) Nothing
+               <*> lift (liftIO getCurrentTime)
 
 matchProcess :: Match -> Handler (Either String Match)
-matchProcess match@(Match win lose)= runDB $ do
+matchProcess match@(Match win lose date)= runDB $ do
   winner <- getBy (UniqueTag win)
   loser <- getBy (UniqueTag lose)
   case (winner, loser) of
@@ -163,8 +164,8 @@ matchProcess match@(Match win lose)= runDB $ do
               updateWhere [PlayerRanking >=. lowest, PlayerRanking <. highest] [PlayerRanking +=. 1]
               _ <- insert $ match
               update k1 [PlayerRanking =. lowest]
-              return $ Right (Match win lose)
-            _ -> return $ Right (Match win lose)
+              return $ Right (Match win lose date)
+            _ -> return $ Right (Match win lose date)
       False -> return $ Left "Invalid match, players too far apart"
     _ -> return $ Left "Failure"
 
