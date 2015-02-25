@@ -7,5 +7,6 @@
 / HomeR GET
 /ladder LadderR GET
 /rules RulesR GET
+/user UserR GET POST
 /admin AdminR GET POST !admin
 /recentMatches RecentMatchesR GET

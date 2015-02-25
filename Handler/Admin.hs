@@ -156,6 +156,7 @@ matchProcess :: Match -> Handler (Either String Match)
 matchProcess match@(Match win lose date)= runDB $ do
   winner <- getBy (UniqueTag win)
   loser <- getBy (UniqueTag lose)
+  now <- liftIO getCurrentTime
   case (winner, loser) of
     (Just winn, Just loss) -> case (validateMatch winn loss ) of
       True ->
@@ -165,14 +166,19 @@ matchProcess match@(Match win lose date)= runDB $ do
             True -> do
               updateWhere [PlayerRanking >=. lowest, PlayerRanking <. highest] [PlayerRanking +=. 1]
               update k1 [PlayerRanking =. lowest]
+              updateWhere inMatch makeActive
               return $ Right (Match win lose date)
-            _ -> return $ Right (Match win lose date)
+            _ -> do
+              updateWhere inMatch makeActive
+              return $ Right (Match win lose date)
             where
               (Entity k1 p1) = winn
               (Entity _ p2) = loss
               r1 = playerRanking p1
               r2 = playerRanking p2
               [lowest, highest] = sort [r1, r2]
+              makeActive = [PlayerLastActive =. Just now, PlayerCurrentlyActive =. Just True]
+              inMatch = [PlayerRanking ==. lowest] ||. [PlayerRanking ==. highest]
       False -> return $ Left "Invalid match, players too far apart"
     _ -> return $ Left "Failure"
 

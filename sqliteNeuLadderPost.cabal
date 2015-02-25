@@ -24,6 +24,7 @@ library
                      Handler.Admin
                      Handler.Ladder
                      Handler.RecentMatches
+                     Handler.UserCommands
                      AuthVerification
 
     if flag(dev) || flag(library-only)
