@@ -4,9 +4,10 @@ import Import
 import Yesod.Form.Bootstrap3
 
 getAdminR :: Handler Html
-getAdminR = do 
+getAdminR = do
+  playerList <- getPlayers
   (addPlayerWidget, enctype) <- generateFormPost $ playerForm
-  (addMatchWidget, _) <- generateFormPost $ matchForm
+  (addMatchWidget, _) <- generateFormPost $ matchForm playerList
   (removePlayerWidget, _) <- generateFormPost $ rPlayerForm
   defaultLayout $ do
     setTitle "NEUMelee Admin"
@@ -14,16 +15,22 @@ getAdminR = do
     $(widgetFile "addMatch")
     $(widgetFile "addPlayer")
     $(widgetFile "removePlayer")
- 
+
+getPlayers = runDB $ do
+          players <- selectList [] [Asc PlayerTag]
+          return $ map (\x -> (playerTag x, playerTag x)) $ map entityVal players
+
+    
 playerForm = identifyForm "addPlayer"$ renderBootstrap3 BootstrapBasicForm addForm
-matchForm =  identifyForm "addMatch" $ renderBootstrap3 BootstrapBasicForm matchAddForm
+matchForm x =  identifyForm "addMatch" $ renderBootstrap3 BootstrapBasicForm $ matchAddForm x
 rPlayerForm =  identifyForm "removePlayer" $ renderBootstrap3 BootstrapBasicForm removePlayerForm
 
 
 postAdminR :: Handler Html
 postAdminR = do
+  playerList <- getPlayers
   ((resultPlayer, addPlayerWidget), enctype) <- runFormPost $ playerForm
-  ((resultMatch, addMatchWidget), _) <- runFormPost $ matchForm
+  ((resultMatch, addMatchWidget), _) <- runFormPost $ matchForm playerList
   ((resultRPlayer, removePlayerWidget), _) <- runFormPost $ rPlayerForm
   let adminWid = do
         setTitle "NEUMelee Admin"
@@ -63,7 +70,7 @@ postAdminR = do
              adminWid
              [whamlet|Player #{x} does not exist|]
         _ -> defaultLayout $ do [whamlet||]
-
+    
       
 data Character =
   Fox |
@@ -138,12 +145,13 @@ testSettings = FieldSettings
  
  
 --------------------------------------------------------------------------------
-matchAddForm :: AForm Handler Match
-matchAddForm = Match
-               <$> areq textField (bfs ("Winner" :: Text)) Nothing
-               <*> areq textField (bfs ("Loser" :: Text)) Nothing
+matchAddForm :: [(Text, Text)] -> AForm Handler Match
+matchAddForm players = Match
+               <$> areq (selectFieldList players) (bfs ("Winner" :: Text)) Nothing
+               <*> areq (selectFieldList players) (bfs ("Loser" :: Text)) Nothing
                <*> lift (liftIO getCurrentTime)
-
+                                    
+               
 matchProcess :: Match -> Handler (Either String Match)
 matchProcess match@(Match win lose date)= runDB $ do
   winner <- getBy (UniqueTag win)

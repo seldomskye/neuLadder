@@ -2,6 +2,7 @@ module Handler.Ladder where
 
 import Import
 import Data.Time
+
 getLadderR :: Handler Html
 getLadderR = do
   players <- getPlayers
