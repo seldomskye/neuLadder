@@ -4,4 +4,5 @@
     <li><a href=@{RulesR}>Rules</a>
     <li><a href=@{AdminR}>Admin</a>
     <li><a href=@{RecentMatchesR}>Recent Matches</a>
+    <li><a href=@{UserR}>Player Commands</a>
 <p>
