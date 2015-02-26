@@ -133,24 +133,17 @@ addForm = PlayerF
           <*> areq textField (bfs ("Player Name" :: Text)) Nothing
           <*> areq (checkboxesFieldList charactersEnum) (bfs ("Characters Played" :: Text)) Nothing 
 
-testSettings :: FieldSettings a
-testSettings = FieldSettings
-  { fsLabel = "Characters Played"
-  , fsTooltip = Nothing
-  , fsId = Just "Test"
-  , fsName = Nothing
-  , fsAttrs =  [("class", "cols-xs-4")]
-  }
- 
- 
 --------------------------------------------------------------------------------
+-- | Takes in a list of PlayerTag,PlayerTag and returns a form with two options containing that list
+-- meant to handle registering matches
 matchAddForm :: [(Text, Text)] -> AForm Handler Match
 matchAddForm players = Match
                <$> areq (selectFieldList players) (bfs ("Winner" :: Text)) Nothing
                <*> areq (selectFieldList players) (bfs ("Loser" :: Text)) Nothing
                <*> lift (liftIO getCurrentTime)
                                     
-               
+-- | Given a match, check for player existence and process the match results
+-- or reject the match and return Left Why
 matchProcess :: Match -> Handler (Either String Match)
 matchProcess match@(Match win lose date)= runDB $ do
   winner <- getBy (UniqueTag win)
@@ -160,7 +153,7 @@ matchProcess match@(Match win lose date)= runDB $ do
     (Just winn, Just loss) -> case (validateMatch winn loss ) of
       True -> 
         do
-          _ <- insert $ match
+          _ <- insert $ match -- always add the match if players exist
           case r1 > r2 of
             True -> do
               updateWhere [PlayerRanking >=. lowest, PlayerRanking <. highest] [PlayerRanking +=. 1]
@@ -181,13 +174,17 @@ matchProcess match@(Match win lose date)= runDB $ do
       False -> return $ Left "Invalid match"
     _ -> return $ Left "Failure"
 
-
+-- | Check if two players are allowed to match up against each other
+-- currently just ensures the players do not have the same rank
 validateMatch :: Entity Player -> Entity Player -> Bool 
 validateMatch (Entity _ (Player _ r1 _ _ _ _)) (Entity _ (Player _ r2 _ _ _ _)) = r1 /= r2
 --------------------------------------------------------------------------------
+-- | Form for removing players from the ladder
 removePlayerForm :: AForm Handler Text
 removePlayerForm = areq textField (bfs("Player Tag" :: Text))Nothing
 
+
+-- | Handler to actually remove players
 playerRProcess :: Text -> Handler (Either Text Text)
 playerRProcess tag = runDB $ do  
   playerWithTag <- selectList [PlayerTag ==. tag] []

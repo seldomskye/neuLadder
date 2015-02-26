@@ -1,6 +1,7 @@
 module Handler.UserCommands where
 
 import Import
+import Handler.Players
 import Yesod.Form.Bootstrap3
 
 -- Mark Self Active
