@@ -20,7 +20,6 @@ getRecentMatchesR = do
   matches <- lastNMatches 20
   defaultLayout $ do
     setTitle "Recent Matches"
-    $(widgetFile "topbar")
     $(widgetFile "recentMatches")
 
 

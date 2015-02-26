@@ -11,7 +11,6 @@ getAdminR = do
   (removePlayerWidget, _) <- generateFormPost $ rPlayerForm
   defaultLayout $ do
     setTitle "NEUMelee Admin"
-    $(widgetFile "topbar")
     $(widgetFile "addMatch")
     $(widgetFile "addPlayer")
     $(widgetFile "removePlayer")
@@ -34,7 +33,6 @@ postAdminR = do
   ((resultRPlayer, removePlayerWidget), _) <- runFormPost $ rPlayerForm
   let adminWid = do
         setTitle "NEUMelee Admin"
-        $(widgetFile "topbar")
         $(widgetFile "addMatch")
         $(widgetFile "addPlayer")
         $(widgetFile "removePlayer")
@@ -43,32 +41,33 @@ postAdminR = do
       playerId <- processPlayer player 
       case playerId of
             Right _ -> defaultLayout $ do
+              [whamlet|<p class="text-success">#{show player}|]
               adminWid
-              [whamlet|<p>#{show player}|]
             Left _ -> defaultLayout $ do
+              [whamlet|<p class="text-danger">Player already present|]
               adminWid
-              [whamlet|<p>Player already present|]
     _ -> case resultMatch of
       FormSuccess match -> do
         rez <- matchProcess match
         case rez of
           Right (Match win lose _) -> defaultLayout $ do
+            [whamlet|<div class="text-success">
+               <p>Congrats to #{show win}!
+               <p>G-fucking-g #{show lose}|]
             adminWid
-            [whamlet|<p>Congrats to #{show win}!
-             <p>G-fucking-g #{show lose}|]
           Left msg -> defaultLayout $ do
+            [whamlet|<p class="text-danger">#{show msg}|] 
             adminWid
-            [whamlet|<p>#{show msg}|] 
       _ -> case resultRPlayer of
         FormSuccess player -> do
           rez <- playerRProcess player
           case rez of
            Right x -> defaultLayout $ do
+             [whamlet|<p class="text-success">Removed #{x}|]
              adminWid
-             [whamlet|<p>Removed #{x}|]
            Left x -> defaultLayout $ do
+             [whamlet|<p class="text-danger">Player #{x} does not exist|]
              adminWid
-             [whamlet|Player #{x} does not exist|]
         _ -> defaultLayout $ do [whamlet||]
     
       
@@ -159,7 +158,7 @@ matchProcess match@(Match win lose date)= runDB $ do
   now <- liftIO getCurrentTime
   case (winner, loser) of
     (Just winn, Just loss) -> case (validateMatch winn loss ) of
-      True ->
+      True -> 
         do
           _ <- insert $ match
           case r1 > r2 of
@@ -179,13 +178,12 @@ matchProcess match@(Match win lose date)= runDB $ do
               [lowest, highest] = sort [r1, r2]
               makeActive = [PlayerLastActive =. Just now, PlayerCurrentlyActive =. Just True]
               inMatch = [PlayerRanking ==. lowest] ||. [PlayerRanking ==. highest]
-      False -> return $ Left "Invalid match, players too far apart"
+      False -> return $ Left "Invalid match"
     _ -> return $ Left "Failure"
 
 
-validateMatch :: Entity Player -> Entity Player -> Bool
---validateMatch (Entity _ (Player _ r1 _)) (Entity _ (Player _ r2 _)) = (<3) . abs $ r2 - r1 
-validateMatch _ _ = True
+validateMatch :: Entity Player -> Entity Player -> Bool 
+validateMatch (Entity _ (Player _ r1 _ _ _ _)) (Entity _ (Player _ r2 _ _ _ _)) = r1 /= r2
 --------------------------------------------------------------------------------
 removePlayerForm :: AForm Handler Text
 removePlayerForm = areq textField (bfs("Player Tag" :: Text))Nothing

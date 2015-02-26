@@ -1,4 +1,3 @@
-^{topBar}
 <div class="row col-xs-12">
   <table class="table table-striped">
     <thead>
@@ -8,12 +7,29 @@
         <th>Name
         <th class="hidden-xs">Characters
     <tbody>
-      $forall Player tag ranking characters name _ _<- players
-        <tr id=#{ranking}>
-          <td>#{ranking}
-          <td>#{tag}
-          <td>#{name}
-          <td class="hidden-xs">
-            $forall char <- characters
-              <img src=/static/meleeChars/#{toLower char}.png alt=#{char}>
-
+      $forall Player tag ranking characters name _ mActive <- players
+        $maybe active <- mActive
+          $if active
+            <tr id=#{ranking}>
+              <td>#{ranking}
+              <td>#{tag}
+              <td>#{name}
+              <td class="hidden-xs">
+                $forall char <- characters
+                  <img src=/static/meleeChars/#{toLower char}.png alt=#{char}>
+          $else
+            <tr id=#{ranking} class="">
+              <td>#{ranking}
+              <td>#{tag}
+              <td>#{name}
+              <td class="hidden-xs">
+                $forall char <- characters
+                  <img src=/static/meleeChars/#{toLower char}.png alt=#{char}>
+        $nothing
+            <tr id=#{ranking} class="">
+              <td>#{ranking}
+              <td>#{tag}
+              <td>#{name}
+              <td class="hidden-xs">
+                $forall char <- characters
+                  <img src=/static/meleeChars/#{toLower char}.png alt=#{char}>
