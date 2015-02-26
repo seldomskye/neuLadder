@@ -9,7 +9,8 @@ getLadderR = do
   defaultLayout $ do
     setTitle "NEUMelee Ladder"
     $(widgetFile "ladder")
-
+    
+-- TODO: make ladder hamlet file not code duplicate so bad?
 getHomeR = getLadderR 
 
 t ::  NominalDiffTime
@@ -24,5 +25,4 @@ getPlayers = runDB $ do
                                                  return p)
 getRulesR = defaultLayout $ do
   setTitle "NEUMelee Ladder Rules"
-  $(widgetFile "topbar")
   $(widgetFile "rules")
