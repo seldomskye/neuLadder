@@ -28,7 +28,6 @@ import Network.Wai.Middleware.RequestLogger (Destination (Logger),
 import System.Log.FastLogger                (defaultBufSize, newStdoutLoggerSet,
                                              toLogStr)
 import Network.Wai.Middleware.HttpAuth (basicAuth, AuthSettings, authIsProtected) 
-import Network.HTTP.Types.URI (queryToQueryText)
 import Network.Wai (queryString, pathInfo, Request)
 import AuthVerification 
 

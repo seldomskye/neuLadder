@@ -15,6 +15,7 @@ getAdminR = do
     $(widgetFile "addPlayer")
     $(widgetFile "removePlayer")
 
+getPlayers :: Handler [(Text, Text)]
 getPlayers = runDB $ do
           players <- selectList [] [Asc PlayerTag]
           return $ map (\x -> (playerTag x, playerTag x)) $ map entityVal players
@@ -31,44 +32,17 @@ postAdminR = do
   ((resultPlayer, addPlayerWidget), enctype) <- runFormPost $ playerForm
   ((resultMatch, addMatchWidget), _) <- runFormPost $ matchForm playerList
   ((resultRPlayer, removePlayerWidget), _) <- runFormPost $ rPlayerForm
-  let adminWid = do
-        setTitle "NEUMelee Admin"
-        $(widgetFile "addMatch")
-        $(widgetFile "addPlayer")
-        $(widgetFile "removePlayer")
-  case resultPlayer of
-    FormSuccess player -> do
-      playerId <- processPlayer player 
-      case playerId of
-            Right _ -> defaultLayout $ do
-              [whamlet|<p class="text-success">#{show player}|]
-              adminWid
-            Left _ -> defaultLayout $ do
-              [whamlet|<p class="text-danger">Player already present|]
-              adminWid
-    _ -> case resultMatch of
-      FormSuccess match -> do
-        rez <- matchProcess match
-        case rez of
-          Right (Match win lose _) -> defaultLayout $ do
-            [whamlet|<div class="text-success">
-               <p>Congrats to #{show win}!
-               <p>G-fucking-g #{show lose}|]
-            adminWid
-          Left msg -> defaultLayout $ do
-            [whamlet|<p class="text-danger">#{show msg}|] 
-            adminWid
-      _ -> case resultRPlayer of
-        FormSuccess player -> do
-          rez <- playerRProcess player
-          case rez of
-           Right x -> defaultLayout $ do
-             [whamlet|<p class="text-success">Removed #{x}|]
-             adminWid
-           Left x -> defaultLayout $ do
-             [whamlet|<p class="text-danger">Player #{x} does not exist|]
-             adminWid
-        _ -> defaultLayout $ do [whamlet||]
+  let playerRW = playerRProcess resultRPlayer
+      playerW = playerProcess resultPlayer
+      matchW = matchProcess resultMatch
+  defaultLayout $ do
+    setTitle "NEUMelee Admin"
+    playerRW
+    playerW
+    matchW
+    $(widgetFile "addMatch")
+    $(widgetFile "addPlayer")
+    $(widgetFile "removePlayer")
     
       
 data Character =
@@ -103,14 +77,29 @@ data Character =
 charactersEnum :: [(Text, Character)]
 charactersEnum = map (pack . show &&& id) [minBound..maxBound]
 
-processPlayer :: PlayerF -> Handler (Either Player PlayerId)
-processPlayer player = runDB $ do
+
+playerProcess :: FormResult PlayerF -> Widget
+playerProcess (FormSuccess p) = playerSuccess p
+playerProcess _ =  [whamlet||]
+
+addPlayer :: PlayerF -> Handler (Either (Entity Player) String)
+addPlayer player = runDB $ do
   x <- count [PlayerRanking >. 0]
   time <- liftIO getCurrentTime
-  maybePlayerId <- insertBy $ playerFtoPlayer player (x + 1) time
-  case maybePlayerId of
-    Left (Entity _ play) -> return $ Left play
-    Right playerId -> return $ Right playerId
+  rez <- insertBy $ playerFtoPlayer player (x + 1) time
+  case rez of
+    (Right _) -> return $ Right $ show player
+    (Left play) -> return $ Left play
+
+playerSuccess' :: Either (Entity Player) String -> Widget
+playerSuccess' (Left _) = [whamlet|<p class="text-danger">Player already present|]
+playerSuccess' (Right player) = [whamlet|<p class="text-success">#{player} was added|]
+
+playerSuccess :: PlayerF -> Widget
+playerSuccess player = do
+  playerE <- handlerToWidget $ addPlayer player
+  playerSuccess' playerE
+  
 
 
 data PlayerF = PlayerF
@@ -141,11 +130,27 @@ matchAddForm players = Match
                <$> areq (selectFieldList players) (bfs ("Winner" :: Text)) Nothing
                <*> areq (selectFieldList players) (bfs ("Loser" :: Text)) Nothing
                <*> lift (liftIO getCurrentTime)
-                                    
+
+matchProcess :: FormResult Match -> Widget
+matchProcess (FormSuccess m) = matchSuccess m
+matchProcess _ = [whamlet||]
+
+matchSuccess :: Match -> Widget
+matchSuccess m = do
+  matchE <- handlerToWidget $ addMatch m
+  matchSuccess' matchE
+
+matchSuccess' :: (Either Text Match) -> Widget
+matchSuccess' (Right (Match win lose _)) = [whamlet|<div class="text-success">
+               <p>Congrats to #{show win}!
+               <p>G-fucking-g #{show lose}|]
+matchSuccess' (Left msg) = [whamlet|<div class="text-danger">
+               <p>#{show msg}|]
+             
 -- | Given a match, check for player existence and process the match results
 -- or reject the match and return Left Why
-matchProcess :: Match -> Handler (Either String Match)
-matchProcess match@(Match win lose date)= runDB $ do
+addMatch :: Match -> Handler (Either Text Match)
+addMatch match@(Match win lose _) = runDB $ do
   winner <- getBy (UniqueTag win)
   loser <- getBy (UniqueTag lose)
   now <- liftIO getCurrentTime
@@ -159,10 +164,10 @@ matchProcess match@(Match win lose date)= runDB $ do
               updateWhere [PlayerRanking >=. lowest, PlayerRanking <. highest] [PlayerRanking +=. 1]
               update k1 [PlayerRanking =. lowest]
               updateWhere inMatch makeActive
-              return $ Right (Match win lose date)
+              return $ success
             _ -> do
               updateWhere inMatch makeActive
-              return $ Right (Match win lose date)
+              return $ success
             where
               (Entity k1 p1) = winn
               (Entity _ p2) = loss
@@ -171,8 +176,10 @@ matchProcess match@(Match win lose date)= runDB $ do
               [lowest, highest] = sort [r1, r2]
               makeActive = [PlayerLastActive =. Just now, PlayerCurrentlyActive =. Just True]
               inMatch = [PlayerRanking ==. lowest] ||. [PlayerRanking ==. highest]
-      False -> return $ Left "Invalid match"
-    _ -> return $ Left "Failure"
+              success = Right match 
+      False -> return $ Left "Invalid Match"
+    (Nothing, _) -> return $ Left "Could not find winner."
+    (_, Nothing) -> return $ Left "Could not find loser."
 
 -- | Check if two players are allowed to match up against each other
 -- currently just ensures the players do not have the same rank
@@ -183,15 +190,35 @@ validateMatch (Entity _ (Player _ r1 _ _ _ _)) (Entity _ (Player _ r2 _ _ _ _)) 
 removePlayerForm :: AForm Handler Text
 removePlayerForm = areq textField (bfs("Player Tag" :: Text))Nothing
 
+-- | FormResult for playerR handler
+playerRProcess :: FormResult Text -> Widget
+playerRProcess (FormSuccess t) = playerRSuccess t
+playerRProcess _ = [whamlet||]
 
--- | Handler to actually remove players
-playerRProcess :: Text -> Handler (Either Text Text)
-playerRProcess tag = runDB $ do  
+-- | The action of taking in a playerTag and deleting it
+-- Left returns the player tag, but implies the tag was not found
+-- Right returns the player tag that was deleted
+-- This relies on player tags being unique
+removePlayer :: Text -> Handler (Either Text Text)
+removePlayer tag = runDB $ do  
   playerWithTag <- selectList [PlayerTag ==. tag] []
   case playerWithTag of
-    ((Entity idi (Player ptag pRanking _ _ _ _) ):[]) -> do
+    ((Entity idi (Player _ pRanking _ _ _ _) ):[]) -> do
       delete idi
       updateWhere [PlayerRanking >. pRanking] [PlayerRanking -=. 1]
-      return $ Right ptag
+      return $ Right tag
     [] -> return $ Left tag
-    _ -> return $ Left $ pack "the fuck"
+    _ -> return $ Left "Multiple players with tag found"
+
+
+
+-- | Handler to actually remove players
+playerRSuccess :: Text -> Widget
+playerRSuccess tag = do
+  removedE <- handlerToWidget $ removePlayer tag
+  playerRSuccess' removedE
+
+-- | Takes in results from removePlayer and returns widgets representing their results
+playerRSuccess' :: (Either Text Text) -> Widget
+playerRSuccess' (Right tag) = [whamlet|<p class="text-success">Removed #{tag}|]
+playerRSuccess' (Left tag) = [whamlet|<p class="text-danger">Player #{tag} does not exist|]
