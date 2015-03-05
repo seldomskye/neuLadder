@@ -1,0 +1,5 @@
+<div class="row col-xs-12">
+  <form method=post action=@{AdminR}#form enctype=#{enctype}>
+    ^{updatePlayerWidget}
+    <button .btn .btn-default type="submit">
+      Update Player's Characters

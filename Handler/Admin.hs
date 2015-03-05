@@ -9,9 +9,11 @@ getAdminR = do
   (addPlayerWidget, enctype) <- generateFormPost $ playerForm
   (addMatchWidget, _) <- generateFormPost $ matchForm playerList
   (removePlayerWidget, _) <- generateFormPost $ rPlayerForm
+  (updatePlayerWidget, _) <- generateFormPost $ uPlayerForm playerList
   defaultLayout $ do
     setTitle "NEUMelee Admin"
     $(widgetFile "addMatch")
+    $(widgetFile "updatePlayer")
     $(widgetFile "addPlayer")
     $(widgetFile "removePlayer")
 
@@ -24,7 +26,7 @@ getPlayers = runDB $ do
 playerForm = identifyForm "addPlayer"$ renderBootstrap3 BootstrapBasicForm addForm
 matchForm x =  identifyForm "addMatch" $ renderBootstrap3 BootstrapBasicForm $ matchAddForm x
 rPlayerForm =  identifyForm "removePlayer" $ renderBootstrap3 BootstrapBasicForm removePlayerForm
-
+uPlayerForm x = identifyForm "updatePlayer" $ renderBootstrap3 BootstrapBasicForm $ updatePlayerForm x
 
 postAdminR :: Handler Html
 postAdminR = do
@@ -32,15 +34,19 @@ postAdminR = do
   ((resultPlayer, addPlayerWidget), enctype) <- runFormPost $ playerForm
   ((resultMatch, addMatchWidget), _) <- runFormPost $ matchForm playerList
   ((resultRPlayer, removePlayerWidget), _) <- runFormPost $ rPlayerForm
+  ((resultUPlayer, updatePlayerWidget), _) <- runFormPost $ uPlayerForm playerList
   let playerRW = playerRProcess resultRPlayer
       playerW = playerProcess resultPlayer
       matchW = matchProcess resultMatch
+      playerU = playerUpdateProcess resultUPlayer
   defaultLayout $ do
     setTitle "NEUMelee Admin"
     playerRW
+    playerU
     playerW
     matchW
     $(widgetFile "addMatch")
+    $(widgetFile "updatePlayer")
     $(widgetFile "addPlayer")
     $(widgetFile "removePlayer")
     
@@ -222,3 +228,26 @@ playerRSuccess tag = do
 playerRSuccess' :: (Either Text Text) -> Widget
 playerRSuccess' (Right tag) = [whamlet|<p class="text-success">Removed #{tag}|]
 playerRSuccess' (Left tag) = [whamlet|<p class="text-danger">Player #{tag} does not exist|]
+--------------------------------------------------------------------------------
+
+updatePlayerForm :: [(Text, Text)] ->AForm Handler (Text, [Character])
+updatePlayerForm players = (,)
+                        <$> areq (selectFieldList players) (bfs ("Winner" :: Text)) Nothing
+                        <*> areq (checkboxesFieldList charactersEnum) (bfs ("Characters Played" :: Text)) Nothing 
+
+playerUpdateProcess :: FormResult (Text, [Character]) -> Widget
+playerUpdateProcess (FormSuccess p) = playerUpdate p
+playerUpdateProcess _ = [whamlet||]
+
+playerUpdate :: (Text, [Character]) -> Widget
+playerUpdate player = do
+  playerE <- handlerToWidget $ updatePlayer player
+  playerUpdate' playerE
+
+updatePlayer :: (Text, [Character]) -> Handler ()
+updatePlayer (tag, characters) = runDB $ do
+  updateWhere [PlayerTag ==. tag] [PlayerCharacters =. charList]
+  where charList = (map (pack . show) characters)
+
+playerUpdate' :: () -> Widget
+playerUpdate' _ = [whamlet|<p class="text-success"> Player successfully updated|]
