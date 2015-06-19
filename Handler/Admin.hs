@@ -17,11 +17,10 @@ getAdminR = do
     $(widgetFile "addPlayer")
     $(widgetFile "removePlayer")
 
-    
-playerForm = identifyForm "addPlayer"$ renderBootstrap3 BootstrapBasicForm addForm
-matchForm x =  identifyForm "addMatch" $ renderBootstrap3 BootstrapBasicForm $ matchAddForm x
+playerForm = identifyForm "addPlayer" $ renderBootstrap3 BootstrapBasicForm addForm
+matchForm = identifyForm "addMatch" . renderBootstrap3 BootstrapBasicForm . matchAddForm
 rPlayerForm =  identifyForm "removePlayer" $ renderBootstrap3 BootstrapBasicForm removePlayerForm
-uPlayerForm x = identifyForm "updatePlayer" $ renderBootstrap3 BootstrapBasicForm $ updatePlayerForm x
+uPlayerForm = identifyForm "updatePlayer" . renderBootstrap3 BootstrapBasicForm . updatePlayerForm
 
 postAdminR :: Handler Html
 postAdminR = do
@@ -44,8 +43,8 @@ postAdminR = do
     $(widgetFile "updatePlayer")
     $(widgetFile "addPlayer")
     $(widgetFile "removePlayer")
-    
-      
+
+
 data Character =
   Fox |
   Falco |
@@ -72,9 +71,9 @@ data Character =
   Pichu |
   Zelda |
   Kirby |
-  MrGameandWatch  
+  MrGameandWatch
   deriving (Show, Eq, Enum, Bounded)
-           
+
 charactersEnum :: [(Text, Character)]
 charactersEnum = map (pack . show &&& id) [minBound..maxBound]
 
@@ -100,7 +99,6 @@ playerSuccess :: PlayerF -> Widget
 playerSuccess player = do
   playerE <- handlerToWidget $ addPlayer player
   playerSuccess' playerE
-  
 
 
 data PlayerF = PlayerF
@@ -111,17 +109,15 @@ data PlayerF = PlayerF
 convToInt64 :: Int -> Int64
 convToInt64 = fromIntegral
 
-
-
 playerFtoPlayer :: PlayerF -> Int -> UTCTime -> Player
-playerFtoPlayer (PlayerF x y z) i time=
+playerFtoPlayer (PlayerF x y z) i time =
   Player x (convToInt64 i)  (map (pack . show)  z)  y (Just time) (Just True)
 
 addForm ::AForm Handler PlayerF
 addForm = PlayerF
           <$> areq textField (bfs ("Player Tag" :: Text)) Nothing
           <*> areq textField (bfs ("Player Name" :: Text)) Nothing
-          <*> areq (checkboxesFieldList charactersEnum) (bfs ("Characters Played" :: Text)) Nothing 
+          <*> areq (checkboxesFieldList charactersEnum) (bfs ("Characters Played" :: Text)) Nothing
 
 --------------------------------------------------------------------------------
 -- | Takes in a list of PlayerTag,PlayerTag and returns a form with two options containing that list
@@ -147,7 +143,7 @@ matchSuccess' (Right (Match win lose _)) = [whamlet|<div class="text-success">
                <p>G-fucking-g #{show lose}|]
 matchSuccess' (Left msg) = [whamlet|<div class="text-danger">
                <p>#{show msg}|]
-             
+
 -- | Given a match, check for player existence and process the match results
 -- or reject the match and return Left Why
 addMatch :: Match -> Handler (Either Text Match)
@@ -157,7 +153,7 @@ addMatch match@(Match win lose _) = runDB $ do
   now <- liftIO getCurrentTime
   case (winner, loser) of
     (Just winn, Just loss) -> case (validateMatch winn loss ) of
-      True -> 
+      True ->
         do
           _ <- insert $ match -- always add the match if players exist
           case r1 > r2 of
@@ -177,14 +173,14 @@ addMatch match@(Match win lose _) = runDB $ do
               [lowest, highest] = sort [r1, r2]
               makeActive = [PlayerLastActive =. Just now, PlayerCurrentlyActive =. Just True]
               inMatch = [PlayerRanking ==. lowest] ||. [PlayerRanking ==. highest]
-              success = Right match 
+              success = Right match
       False -> return $ Left "Invalid Match"
     (Nothing, _) -> return $ Left "Could not find winner."
     (_, Nothing) -> return $ Left "Could not find loser."
 
 -- | Check if two players are allowed to match up against each other
 -- currently just ensures the players do not have the same rank
-validateMatch :: Entity Player -> Entity Player -> Bool 
+validateMatch :: Entity Player -> Entity Player -> Bool
 validateMatch (Entity _ (Player _ r1 _ _ _ _)) (Entity _ (Player _ r2 _ _ _ _)) = r1 /= r2
 --------------------------------------------------------------------------------
 -- | Form for removing players from the ladder
@@ -201,7 +197,7 @@ playerRProcess _ = [whamlet||]
 -- Right returns the player tag that was deleted
 -- This relies on player tags being unique
 removePlayer :: Text -> Handler (Either Text Text)
-removePlayer tag = runDB $ do  
+removePlayer tag = runDB $ do
   playerWithTag <- selectList [PlayerTag ==. tag] []
   case playerWithTag of
     ((Entity idi (Player _ pRanking _ _ _ _) ):[]) -> do
@@ -228,7 +224,7 @@ playerRSuccess' (Left tag) = [whamlet|<p class="text-danger">Player #{tag} does 
 updatePlayerForm :: [(Text, Text)] ->AForm Handler (Text, [Character])
 updatePlayerForm players = (,)
                         <$> areq (selectFieldList players) (bfs ("Winner" :: Text)) Nothing
-                        <*> areq (checkboxesFieldList charactersEnum) (bfs ("Characters Played" :: Text)) Nothing 
+                        <*> areq (checkboxesFieldList charactersEnum) (bfs ("Characters Played" :: Text)) Nothing
 
 playerUpdateProcess :: FormResult (Text, [Character]) -> Widget
 playerUpdateProcess (FormSuccess p) = playerUpdate p
