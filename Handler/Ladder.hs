@@ -1,7 +1,8 @@
 module Handler.Ladder where
 
-import Import
+import Import hiding (getPlayers)
 import Data.Time
+
 
 getLadderR :: Handler Html
 getLadderR = do
@@ -9,11 +10,11 @@ getLadderR = do
   defaultLayout $ do
     setTitle "NEUMelee Ladder"
     $(widgetFile "ladder")
+
     
 -- TODO: make ladder hamlet file not code duplicate so bad?
 getHomeR = getLadderR 
 
-t ::  NominalDiffTime
 t = -3 * 60 * 60 
 
 getPlayers :: Handler ([Player])
@@ -26,3 +27,7 @@ getPlayers = runDB $ do
 getRulesR = defaultLayout $ do
   setTitle "NEUMelee Ladder Rules"
   $(widgetFile "rules")
+
+
+
+

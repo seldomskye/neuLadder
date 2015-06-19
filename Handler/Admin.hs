@@ -17,11 +17,6 @@ getAdminR = do
     $(widgetFile "addPlayer")
     $(widgetFile "removePlayer")
 
-getPlayers :: Handler [(Text, Text)]
-getPlayers = runDB $ do
-          players <- selectList [] [Asc PlayerTag]
-          return $ map (\x -> (playerTag x, playerTag x)) $ map entityVal players
-
     
 playerForm = identifyForm "addPlayer"$ renderBootstrap3 BootstrapBasicForm addForm
 matchForm x =  identifyForm "addMatch" $ renderBootstrap3 BootstrapBasicForm $ matchAddForm x
