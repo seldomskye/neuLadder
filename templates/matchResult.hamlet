@@ -1,0 +1,14 @@
+<div class="row col-xs-12">
+  #{p1} wins #{win_rate}% of the time vs #{p2}
+  
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Date
+        <th>Winner
+    <tbody>
+      $forall Match winner loser date <- matchesSortedByDate
+        <tr>
+          <td>#{show date}
+          <td>#{winner}
+         

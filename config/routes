@@ -10,3 +10,4 @@
 /user UserR GET POST
 /admin AdminR GET POST !admin
 /recentMatches RecentMatchesR GET
+/compare ComparisonR GET POST

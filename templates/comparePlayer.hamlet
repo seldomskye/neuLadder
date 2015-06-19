@@ -1,0 +1,6 @@
+<div class="row col-xs-12">
+  <form method=post action=@{ComparisonR}#form>
+    <div class="form-group">
+      ^{compWidget}
+      <button .btn .btn-default type="submit">
+        Compare Players
