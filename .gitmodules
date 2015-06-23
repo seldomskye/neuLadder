@@ -1,0 +1,3 @@
+[submodule "trueskill"]
+	path = trueskill
+	url = git@github.com:mkiefel/trueskill.git
