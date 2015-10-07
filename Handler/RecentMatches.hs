@@ -2,7 +2,7 @@ module Handler.RecentMatches where
 
 import Import
 import Yesod.Form.Bootstrap3
-import Data.Time
+import Data.Time as T
 
 
 easternTimeZone :: TimeZone
@@ -12,7 +12,7 @@ easternTimeZone = TimeZone
   , timeZoneName = "EST"} 
 
 renderTimeEtc :: UTCTime -> String
-renderTimeEtc matchD = formatTime defaultTimeLocale "%Y-%m-%d  %H:%M" estTime
+renderTimeEtc matchD = formatTime T.defaultTimeLocale "%Y-%m-%d  %H:%M" estTime
   where estTime = utcToLocalTime easternTimeZone matchD 
  
 getRecentMatchesR :: Handler Html
