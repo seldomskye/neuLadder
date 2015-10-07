@@ -2,4 +2,4 @@
   <form method=post action=@{AdminR}#form enctype=#{enctype}>
     ^{updatePlayerWidget}
     <button .btn .btn-default type="submit">
-      Update Player's Characters
+      Adjust Player
